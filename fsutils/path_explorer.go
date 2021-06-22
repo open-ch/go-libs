@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -19,6 +20,20 @@ func SearchByFileName(rootPath string, baseName string) ([]string, error) {
 	}
 
 	return basenameGlob(rootPath, baseName)
+}
+
+// SearchByFileNameRegex Given a path, returns all sub-paths to files that have names that match the passed regex.
+// rootPath must be absolute
+// TODO some thing that supports "real" globs would be nice.
+func SearchByFileNameRegex(rootPath string, baseNameRegex string) ([]string, error) {
+	if !filepath.IsAbs(rootPath) {
+		return nil, fmt.Errorf("rootPath is not absolute: %s", rootPath)
+	}
+	if len(baseNameRegex) == 0 {
+		return nil, fmt.Errorf("baseNameRegex cannot be empty")
+	}
+
+	return basenameRegexGlob(rootPath, baseNameRegex)
 }
 
 // SearchByExtension Given a path, returns all sub-paths to files that have the specified extension 'ext'.
@@ -72,6 +87,24 @@ func basenameGlob(dir string, baseName string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if filepath.Base(path) == baseName {
+			files = append(files, path)
+		}
+		return nil
+	})
+
+	return files, err
+}
+
+// filepath.Glob does not support things like '**/file'
+func basenameRegexGlob(dir string, baseNameRegex string) ([]string, error) {
+	r, err := regexp.Compile(baseNameRegex)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	err = filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+		if r.MatchString(filepath.Base(path)) {
 			files = append(files, path)
 		}
 		return nil

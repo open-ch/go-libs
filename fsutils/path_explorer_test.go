@@ -31,6 +31,22 @@ func TestSearchByFileName(t *testing.T) {
 	assert.Equal(t, 2, len(withExtension), "Expected two matches")
 }
 
+func TestSearchByFileNameRegex(t *testing.T) {
+	testDir := getTestDir()
+
+	_, notAbsErr := SearchByFileNameRegex("relative/path", `README\.ma?d`)
+	assert.NotNil(t, notAbsErr, "Expected an error if provided with a relative path")
+
+	_, emptyNameErr := SearchByFileNameRegex(testDir, "")
+	assert.NotNil(t, emptyNameErr, "Expected an error if provided with an empty regex")
+
+	doubleMatch, _ := SearchByFileNameRegex(testDir, `README\.m[ae]d`)
+	assert.Equal(t, 2, len(doubleMatch), "Expected two matches")
+	assert.Equal(t, "README.med", filepath.Base(doubleMatch[0]), "Expected correct match")
+	assert.Equal(t, "README.mad", filepath.Base(doubleMatch[1]), "Expected correct match")
+
+}
+
 func TestSearchByExtension(t *testing.T) {
 	testDir := getTestDir()
 
