@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // GitResolveRevision prints the SHA1 hash given a revision specifier
@@ -65,4 +66,19 @@ func GitCheckout(inPath string, commitOrBranch string ){
 		os.Exit(1)
 	}
 	fmt.Println("Checkout out branch or commit")
+}
+
+// GitResolveRoot finds the root of a git repo given a path
+// see https://git-scm.com/docs/git-rev-parse#Documentation/git-rev-parse.txt---show-toplevel for more details
+func GitResolveRoot(inPath string) string {
+	var (
+		cmdOut []byte
+		err    error
+	)
+	if cmdOut, err =  exec.Command("git", "-C", inPath, "rev-parse", "--show-toplevel").Output(); err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error reading the repository root: ", err)
+		os.Exit(1)
+	}
+	message := string(cmdOut)
+	return strings.TrimSuffix(message, "\n")
 }
