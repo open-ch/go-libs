@@ -1,9 +1,11 @@
 package gitshell
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -81,4 +83,58 @@ func GitResolveRoot(inPath string) string {
 	}
 	message := string(cmdOut)
 	return strings.TrimSuffix(message, "\n")
+}
+
+// GitChange is an enumeration of possible actions perform on files within a commit.
+type GitChange int
+
+const (
+	// Modified signals that the file was modified
+	Modified GitChange = iota
+	// Added signals that the file was modified
+	Added
+	// Deleted signals that the file was modified
+	Deleted
+)
+
+func fromString(modifier string) (GitChange, error) {
+	switch modifier {
+		case "M":
+			return Modified, nil
+		case "A":
+			return Added, nil
+		case "D":
+			return Deleted, nil
+		default:
+			return Modified, fmt.Errorf("could not parse Git modifier")
+	}
+}
+
+// GitFileDiff extracts the map of files and the action that was performed on them: added, modified or delete.
+func GitFileDiff(inPath, previousCommit, currentCommit string) map[string]GitChange {
+	m := make(map[string]GitChange)
+	var (
+		cmdOut []byte
+		err    error
+	)
+	if cmdOut, err = exec.Command("git", "-C", inPath, "diff", "--no-renames", "--name-status", previousCommit, currentCommit).Output(); err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error reading the changed files: ", err)
+		os.Exit(1)
+	}
+	scanner := bufio.NewScanner(strings.NewReader(string(cmdOut))) // f is the *os.File
+	r := regexp.MustCompile("[\\s]+")
+	for scanner.Scan() {
+		s := r.Split(scanner.Text(), 2)
+		if len(s) == 2 {
+			if mod, err := fromString(s[0]); err == nil {
+				m[s[1]] = mod
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error reading the changed files: ", err)
+		os.Exit(1)
+	}
+
+	return m
 }
