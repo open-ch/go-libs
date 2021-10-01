@@ -2,8 +2,9 @@ package mdutils
 
 import (
 	"fmt"
-	"github.com/russross/blackfriday/v2"
 	"regexp"
+
+	"github.com/russross/blackfriday/v2"
 )
 
 const reStr = `^(\d{1,2}\.\d{1,2}\.\d{4}).*`
@@ -84,7 +85,7 @@ func groupByRelease(nodes []*blackfriday.Node) ([]*Change, error) {
 				HeaderNode:   nodes[0],
 				ContentNodes: releaseContent,
 			})
-			// ... and initialise another one
+			// ... and initialize another one
 			headerNode = node
 			releaseContent = []*blackfriday.Node{}
 		} else {
