@@ -11,13 +11,18 @@ import (
 
 // GitResolveRevision prints the SHA1 hash given a revision specifier
 // see https://git-scm.com/docs/git-rev-parse for more details
-func GitResolveRevision(inPath string, branch string) string {
+func GitResolveRevision(inPath, branch string) string {
 	var (
 		cmdOut []byte
 		err    error
 	)
-    if cmdOut, err = exec.Command("git","-C", inPath, "rev-parse", branch).Output(); err != nil {
-        fmt.Fprintln(os.Stderr, "There was an error running the git rev-parse command: ", err)
+	// --verify gives us a more compact error output
+    if cmdOut, err = exec.Command("git","-C", inPath, "rev-parse", "--verify", branch).CombinedOutput(); err != nil {
+		if notFound, _ := regexp.Match("fatal: Needed a single revision", cmdOut); notFound {
+    		fmt.Fprintln(os.Stderr, "Could not resolve passed commit identifier: ", branch)
+		} else {
+			fmt.Fprintln(os.Stderr, "There was an error running the git rev-parse command: ", err)
+		}
         os.Exit(1)
     }
     sha := string(cmdOut)
@@ -26,7 +31,7 @@ func GitResolveRevision(inPath string, branch string) string {
 
 // GitAdd adds a change in the working directory to the staging area
 // see https://git-scm.com/docs/git-add for more details
-func GitAdd(inPath string, filePath string ){
+func GitAdd(inPath, filePath string ){
 	if err := exec.Command("git", "-C", inPath, "add", filePath).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -36,7 +41,7 @@ func GitAdd(inPath string, filePath string ){
 
 // GitCommit saves your changes to the local repository
 // see https://git-scm.com/docs/git-commit for more details
-func GitCommit(inPath string, commitMsg string){
+func GitCommit(inPath, commitMsg string){
 	if err := exec.Command("git","-C", inPath, "commit","-m", commitMsg).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -46,7 +51,7 @@ func GitCommit(inPath string, commitMsg string){
 
 // GitCommitMessageFromHash returns the commit message from the given commit hash
 // see https://git-scm.com/docs/git-log for more details
-func GitCommitMessageFromHash(inPath string, hash string) string{
+func GitCommitMessageFromHash(inPath, hash string) string{
 	var (
 		cmdOut []byte
 		err    error
@@ -62,7 +67,7 @@ func GitCommitMessageFromHash(inPath string, hash string) string{
 
 // GitCheckout lets you navigate between the branches
 // see https://git-scm.com/docs/git-checkout for more details
-func GitCheckout(inPath string, commitOrBranch string ){
+func GitCheckout(inPath, commitOrBranch string ){
 	if err := exec.Command("git", "-C", inPath, "checkout", commitOrBranch).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -86,7 +91,7 @@ func GitResolveRoot(inPath string) string {
 }
 
 // GitReset hard reset to a given commit
-func GitReset(inPath string, commit string) error {
+func GitReset(inPath, commit string) error {
 	if _, err :=  exec.Command("git", "-C", inPath, "reset", "--hard", commit).Output(); err != nil {
 		fmt.Fprintf(os.Stderr, "There was an error reset the repo to %s: %v\n", commit, err)
 		return err
@@ -132,7 +137,7 @@ func GitFileDiff(inPath, previousCommit, currentCommit string) map[string]GitCha
 		os.Exit(1)
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(cmdOut))) // f is the *os.File
-	r := regexp.MustCompile("[\\s]+")
+	r := regexp.MustCompile(`\s+`)
 	for scanner.Scan() {
 		s := r.Split(scanner.Text(), 2)
 		if len(s) == 2 {
