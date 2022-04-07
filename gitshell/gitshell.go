@@ -17,21 +17,22 @@ func GitResolveRevision(inPath, branch string) string {
 		err    error
 	)
 	// --verify gives us a more compact error output
-    if cmdOut, err = exec.Command("git","-C", inPath, "rev-parse", "--verify", branch).CombinedOutput(); err != nil {
+	if cmdOut, err = exec.Command("git", "-C", inPath, "rev-parse", "--verify", branch).CombinedOutput(); err != nil {
 		if notFound, _ := regexp.Match("fatal: Needed a single revision", cmdOut); notFound {
-    		fmt.Fprintln(os.Stderr, "Could not resolve passed commit identifier: ", branch)
+			fmt.Fprintln(os.Stderr, "Could not resolve passed commit identifier: ", branch)
 		} else {
 			fmt.Fprintln(os.Stderr, "There was an error running the git rev-parse command: ", err)
 		}
-        os.Exit(1)
-    }
-    sha := string(cmdOut)
-    return sha[0:40]
+		os.Exit(1)
+	}
+	sha := string(cmdOut)
+
+	return sha[0:40]
 }
 
 // GitAdd adds a change in the working directory to the staging area
 // see https://git-scm.com/docs/git-add for more details
-func GitAdd(inPath, filePath string ){
+func GitAdd(inPath, filePath string) {
 	if err := exec.Command("git", "-C", inPath, "add", filePath).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -41,8 +42,8 @@ func GitAdd(inPath, filePath string ){
 
 // GitCommit saves your changes to the local repository
 // see https://git-scm.com/docs/git-commit for more details
-func GitCommit(inPath, commitMsg string){
-	if err := exec.Command("git","-C", inPath, "commit","-m", commitMsg).Run(); err != nil {
+func GitCommit(inPath, commitMsg string) {
+	if err := exec.Command("git", "-C", inPath, "commit", "-m", commitMsg).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -51,28 +52,29 @@ func GitCommit(inPath, commitMsg string){
 
 // GitCommitMessageFromHash returns the commit message from the given commit hash
 // see https://git-scm.com/docs/git-log for more details
-func GitCommitMessageFromHash(inPath, hash string) string{
+func GitCommitMessageFromHash(inPath, hash string) string {
 	var (
 		cmdOut []byte
 		err    error
 	)
-    if cmdOut, err = exec.Command("git","-C", inPath, "log", "-n", "1", "--pretty=format:%B", hash).Output(); err != nil {
-        fmt.Fprintln(os.Stderr, "There was an error returning the git commit message: ", err)
-        os.Exit(1)
-    }
-    message := string(cmdOut)
-    return message
+	if cmdOut, err = exec.Command("git", "-C", inPath, "log", "-n", "1", "--pretty=format:%B", hash).Output(); err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error returning the git commit message: ", err)
+		os.Exit(1)
+	}
+	message := string(cmdOut)
 
+	return message
 }
 
 // GitCheckout lets you navigate between the branches
+// returns the output from git and error object if the command failed.
 // see https://git-scm.com/docs/git-checkout for more details
-func GitCheckout(inPath, commitOrBranch string ){
-	if err := exec.Command("git", "-C", inPath, "checkout", commitOrBranch).Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+func GitCheckout(inPath, commitOrBranch string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "checkout", commitOrBranch).CombinedOutput()
+	if err != nil {
+		return string(output), err
 	}
-	fmt.Println("Checkout out branch or commit")
+	return string(output), nil
 }
 
 // GitResolveRoot finds the root of a git repo given a path
@@ -82,21 +84,23 @@ func GitResolveRoot(inPath string) string {
 		cmdOut []byte
 		err    error
 	)
-	if cmdOut, err =  exec.Command("git", "-C", inPath, "rev-parse", "--show-toplevel").Output(); err != nil {
+	if cmdOut, err = exec.Command("git", "-C", inPath, "rev-parse", "--show-toplevel").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error reading the repository root: ", err)
 		os.Exit(1)
 	}
 	message := string(cmdOut)
+
 	return strings.TrimSuffix(message, "\n")
 }
 
 // GitReset hard reset to a given commit
 func GitReset(inPath, commit string) error {
-	if _, err :=  exec.Command("git", "-C", inPath, "reset", "--hard", commit).Output(); err != nil {
+	if _, err := exec.Command("git", "-C", inPath, "reset", "--hard", commit).Output(); err != nil {
 		fmt.Fprintf(os.Stderr, "There was an error reset the repo to %s: %v\n", commit, err)
 		return err
 	}
 	fmt.Printf("Successfully reset to %s\n", commit)
+
 	return nil
 }
 
@@ -114,14 +118,14 @@ const (
 
 func fromString(modifier string) (GitChange, error) {
 	switch modifier {
-		case "M":
-			return Modified, nil
-		case "A":
-			return Added, nil
-		case "D":
-			return Deleted, nil
-		default:
-			return Modified, fmt.Errorf("could not parse Git modifier")
+	case "M":
+		return Modified, nil
+	case "A":
+		return Added, nil
+	case "D":
+		return Deleted, nil
+	default:
+		return Modified, fmt.Errorf("could not parse Git modifier")
 	}
 }
 
