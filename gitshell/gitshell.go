@@ -94,14 +94,9 @@ func GitResolveRoot(inPath string) string {
 }
 
 // GitReset hard reset to a given commit
-func GitReset(inPath, commit string) error {
-	if _, err := exec.Command("git", "-C", inPath, "reset", "--hard", commit).Output(); err != nil {
-		fmt.Fprintf(os.Stderr, "There was an error reset the repo to %s: %v\n", commit, err)
-		return err
-	}
-	fmt.Printf("Successfully reset to %s\n", commit)
-
-	return nil
+func GitReset(inPath, commit string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "reset", "--hard", commit).CombinedOutput()
+	return string(output), err
 }
 
 // GitChange is an enumeration of possible actions perform on files within a commit.
