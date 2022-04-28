@@ -52,18 +52,13 @@ func GitCommit(inPath, commitMsg string) {
 
 // GitCommitMessageFromHash returns the commit message from the given commit hash
 // see https://git-scm.com/docs/git-log for more details
-func GitCommitMessageFromHash(inPath, hash string) string {
-	var (
-		cmdOut []byte
-		err    error
-	)
-	if cmdOut, err = exec.Command("git", "-C", inPath, "log", "-n", "1", "--pretty=format:%B", hash).Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "There was an error returning the git commit message: ", err)
-		os.Exit(1)
+func GitCommitMessageFromHash(inPath, hash string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "log", "-n", "1", "--pretty=format:%B", hash).CombinedOutput()
+	if err != nil {
+		return string(output), err
 	}
-	message := string(cmdOut)
 
-	return message
+	return string(output), nil
 }
 
 // GitCheckout lets you navigate between the branches
