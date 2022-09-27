@@ -1,7 +1,7 @@
 # Go Libs
 
 This is the home for various Open Systems public Go libraries. Its goal is mostly to be able to share
-some code across some open sourced tools like [kaeter](https://github.com/open-ch/kaeter) or [checkdoc](https://github.com/open-ch/checkdoc)
+some code across some open sourced tools like [kaeter](https://github.com/open-ch/kaeter) or [checkdoc](https://github.com/open-ch/checkdoc).
 
 To keep things simple, we want to keep smaller libraries in a single repository, but nothing speaks
 against hosting modules in a separate repository whenever it is required.
