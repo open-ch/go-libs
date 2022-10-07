@@ -33,8 +33,8 @@ func GitResolveRevision(inPath, branch string) string {
 // GitAdd adds a change in the working directory to the staging area
 // see https://git-scm.com/docs/git-add for more details
 func GitAdd(inPath, filePath string) {
-	if err := exec.Command("git", "-C", inPath, "add", filePath).Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	if output, err := exec.Command("git", "-C", inPath, "add", filePath).CombinedOutput(); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("gitshell failed to add %s to %s", filePath, inPath), string(output), err)
 		os.Exit(1)
 	}
 	fmt.Println("Successfully added File")
@@ -43,8 +43,8 @@ func GitAdd(inPath, filePath string) {
 // GitCommit saves your changes to the local repository
 // see https://git-scm.com/docs/git-commit for more details
 func GitCommit(inPath, commitMsg string) {
-	if err := exec.Command("git", "-C", inPath, "commit", "-m", commitMsg).Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	if output, err := exec.Command("git", "-C", inPath, "commit", "-m", commitMsg).CombinedOutput(); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("gitshell failed to commit (%s) to %s", commitMsg, inPath), string(output), err)
 		os.Exit(1)
 	}
 	fmt.Println("Successfully committed with given commit message")
@@ -54,11 +54,7 @@ func GitCommit(inPath, commitMsg string) {
 // see https://git-scm.com/docs/git-log for more details
 func GitCommitMessageFromHash(inPath, hash string) (string, error) {
 	output, err := exec.Command("git", "-C", inPath, "log", "-n", "1", "--pretty=format:%B", hash).CombinedOutput()
-	if err != nil {
-		return string(output), err
-	}
-
-	return string(output), nil
+	return string(output), err
 }
 
 // GitCheckout lets you navigate between the branches
@@ -66,10 +62,20 @@ func GitCommitMessageFromHash(inPath, hash string) (string, error) {
 // see https://git-scm.com/docs/git-checkout for more details
 func GitCheckout(inPath, commitOrBranch string) (string, error) {
 	output, err := exec.Command("git", "-C", inPath, "checkout", commitOrBranch).CombinedOutput()
-	if err != nil {
-		return string(output), err
-	}
-	return string(output), nil
+	return string(output), err
+}
+
+// GitBranchContains returns the branches containing a given commit hash
+// This will check all branches (--all) including remotes, using the pattern to filter (via --list)
+func GitBranchContains(inPath, hash, pattern string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "branch", "--all", "--contains", hash, "--list", pattern).CombinedOutput()
+	return string(output), err
+}
+
+// GitFetch does what you think it does
+func GitFetch(inPath string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "fetch").CombinedOutput()
+	return string(output), err
 }
 
 // GitResolveRoot finds the root of a git repo given a path
