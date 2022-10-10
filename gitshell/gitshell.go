@@ -3,7 +3,6 @@ package gitshell
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -11,7 +10,7 @@ import (
 
 // GitResolveRevision prints the SHA1 hash given a revision specifier
 // see https://git-scm.com/docs/git-rev-parse for more details
-func GitResolveRevision(inPath, branch string) string {
+func GitResolveRevision(inPath, branch string) (string, error) {
 	var (
 		cmdOut []byte
 		err    error
@@ -19,35 +18,27 @@ func GitResolveRevision(inPath, branch string) string {
 	// --verify gives us a more compact error output
 	if cmdOut, err = exec.Command("git", "-C", inPath, "rev-parse", "--verify", branch).CombinedOutput(); err != nil {
 		if notFound, _ := regexp.Match("fatal: Needed a single revision", cmdOut); notFound {
-			fmt.Fprintln(os.Stderr, "Could not resolve passed commit identifier: ", branch)
-		} else {
-			fmt.Fprintln(os.Stderr, "There was an error running the git rev-parse command: ", err)
+			return string(cmdOut), fmt.Errorf("error cannot resolve passed commit identifier: %s", branch)
 		}
-		os.Exit(1)
+		return string(cmdOut), err
 	}
 	sha := string(cmdOut)
 
-	return sha[0:40]
+	return sha[0:40], nil
 }
 
 // GitAdd adds a change in the working directory to the staging area
 // see https://git-scm.com/docs/git-add for more details
-func GitAdd(inPath, filePath string) {
-	if output, err := exec.Command("git", "-C", inPath, "add", filePath).CombinedOutput(); err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("gitshell failed to add %s to %s", filePath, inPath), string(output), err)
-		os.Exit(1)
-	}
-	fmt.Println("Successfully added File")
+func GitAdd(inPath, filePath string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "add", filePath).CombinedOutput()
+	return string(output), err
 }
 
 // GitCommit saves your changes to the local repository
 // see https://git-scm.com/docs/git-commit for more details
-func GitCommit(inPath, commitMsg string) {
-	if output, err := exec.Command("git", "-C", inPath, "commit", "-m", commitMsg).CombinedOutput(); err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("gitshell failed to commit (%s) to %s", commitMsg, inPath), string(output), err)
-		os.Exit(1)
-	}
-	fmt.Println("Successfully committed with given commit message")
+func GitCommit(inPath, commitMsg string) (string, error) {
+	output, err := exec.Command("git", "-C", inPath, "commit", "-m", commitMsg).CombinedOutput()
+	return string(output), err
 }
 
 // GitCommitMessageFromHash returns the commit message from the given commit hash
@@ -80,18 +71,13 @@ func GitFetch(inPath string) (string, error) {
 
 // GitResolveRoot finds the root of a git repo given a path
 // see https://git-scm.com/docs/git-rev-parse#Documentation/git-rev-parse.txt---show-toplevel for more details
-func GitResolveRoot(inPath string) string {
-	var (
-		cmdOut []byte
-		err    error
-	)
-	if cmdOut, err = exec.Command("git", "-C", inPath, "rev-parse", "--show-toplevel").Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "There was an error reading the repository root: ", err)
-		os.Exit(1)
+func GitResolveRoot(inPath string) (string, error) {
+	cmdOut, err := exec.Command("git", "-C", inPath, "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return string(cmdOut), err
 	}
-	message := string(cmdOut)
 
-	return strings.TrimSuffix(message, "\n")
+	return strings.TrimSuffix(string(cmdOut), "\n"), nil
 }
 
 // GitReset hard reset to a given commit
@@ -126,15 +112,15 @@ func fromString(modifier string) (GitChange, error) {
 }
 
 // GitFileDiff extracts the map of files and the action that was performed on them: added, modified or delete.
-func GitFileDiff(inPath, previousCommit, currentCommit string) map[string]GitChange {
+func GitFileDiff(inPath, previousCommit, currentCommit string) (map[string]GitChange, error) {
 	m := make(map[string]GitChange)
 	var (
 		cmdOut []byte
 		err    error
 	)
-	if cmdOut, err = exec.Command("git", "-C", inPath, "diff", "--no-renames", "--name-status", previousCommit, currentCommit).Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "There was an error reading the changed files: ", err)
-		os.Exit(1)
+	cmdOut, err = exec.Command("git", "-C", inPath, "diff", "--no-renames", "--name-status", previousCommit, currentCommit).Output()
+	if err != nil {
+		return nil, err
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(cmdOut))) // f is the *os.File
 	r := regexp.MustCompile(`\s+`)
@@ -147,9 +133,8 @@ func GitFileDiff(inPath, previousCommit, currentCommit string) map[string]GitCha
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "There was an error reading the changed files: ", err)
-		os.Exit(1)
+		return m, fmt.Errorf("error reading the changed files: %w", err)
 	}
 
-	return m
+	return m, nil
 }
