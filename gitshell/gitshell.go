@@ -56,13 +56,6 @@ func GitCheckout(inPath, commitOrBranch string) (string, error) {
 	return string(output), err
 }
 
-// GitBranchContains returns the branches containing a given commit hash
-// This will check all branches (--all) including remotes, using the pattern to filter (via --list)
-func GitBranchContains(inPath, hash, pattern string) (string, error) {
-	output, err := exec.Command("git", "-C", inPath, "branch", "--all", "--contains", hash, "--list", pattern).CombinedOutput()
-	return string(output), err
-}
-
 // GitFetch does what you think it does
 func GitFetch(inPath string) (string, error) {
 	output, err := exec.Command("git", "-C", inPath, "fetch").CombinedOutput()
