@@ -34,7 +34,7 @@ func TestExtractAllLinks(t *testing.T) {
 	assert.Equal(t, 11, len(links), "Expected 10 links. Is the Autolink extension enabled?")
 
 	assert.Equal(t, "https://google.ch", string(links[0].Destination))
-	assert.Equal(t, "SCRUBBED-URL", string(links[1].Destination))
+	assert.Equal(t, "https://open.ch", string(links[1].Destination))
 	assert.Equal(t, "relative/internal", string(links[2].Destination))
 	assert.Equal(t, "/absolute/internal", string(links[3].Destination))
 	assert.Equal(t, "https://sqooba.io", string(links[4].Destination))

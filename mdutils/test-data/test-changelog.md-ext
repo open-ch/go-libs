@@ -69,7 +69,7 @@ In order to access and publish packages, set the following properties in the .np
 # The login and password are that of your Sonatype Nexus account.
 # In ~/.npmrc, set
 registry=SCRUBBED-URL
-email=<short>@SCRUBBED-URL
+email=<short>@open.ch
 _auth="<base64 encoded login>"
 always-auth=true
 
@@ -129,7 +129,7 @@ It does *NOT* affect the way images are deployed for now: you can rely on Nexus
 until the second step of the migration is completed.
 
 Your local environment should be updated with these:
-(Note that all usernames mentioned below should be in the form `<short>@SCRUBBED-URL`)
+(Note that all usernames mentioned below should be in the form `<short>@open.ch`)
 
 #### Docker
 You need to setup Docker login for artifactory:
@@ -140,7 +140,7 @@ docker login SCRUBBED-URL
 #### Maven
 You need to add an entry for nexus in `~/Library/Preferences/Coursier/credentials.properties`:
 ```
-artifactory.username=<USERNAME> # In the form `<short>@SCRUBBED-URL`
+artifactory.username=<USERNAME> # In the form `<short>@open.ch`
 artifactory.password=<PASSWORD>
 artifactory.host=SCRUBBED-URL
 artifactory.auto=true
@@ -150,7 +150,7 @@ You can use the same credentials that you used for docker login.
 #### Environment variables
 Add the following environment variables:
 ```
-DEPLOY_MAVEN_USERNAME_ARTIFACTORY # In the form `<short>@SCRUBBED-URL`
+DEPLOY_MAVEN_USERNAME_ARTIFACTORY # In the form `<short>@open.ch`
 DEPLOY_MAVEN_PASSWORD_ARTIFACTORY
 ```
 You can use the same credentials that you used for docker login.
@@ -159,9 +159,9 @@ You can use the same credentials that you used for docker login.
 ### Environment variables
 Add the following environment variables:
 ```
-DEPLOY_RPM_USERNAME_ARTIFACTORY # In the form `<short>@SCRUBBED-URL`
+DEPLOY_RPM_USERNAME_ARTIFACTORY # In the form `<short>@open.ch`
 DEPLOY_RPM_PASSWORD_ARTIFACTORY
-DEPLOY_RAW_USERNAME_ARTIFACTORY # In the form `<short>@SCRUBBED-URL`
+DEPLOY_RAW_USERNAME_ARTIFACTORY # In the form `<short>@open.ch`
 DEPLOY_RAW_PASSWORD_ARTIFACTORY
 ```
 They can have the same value as `DEPLOY_MAVEN_USERNAME_ARTIFACTORY` / `DEPLOY_MAVEN_PASSWORD_ARTIFACTORY`.
